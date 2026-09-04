@@ -148,6 +148,6 @@ seaborn>=0.12.0
 
 ## Author
 
-[Your Name] — Data Analyst
+[Sanjana R] 
 
-*(Replace with your name and contact details before publishing.)*
+
