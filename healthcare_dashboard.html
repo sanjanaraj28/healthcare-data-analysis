@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Healthcare Data Analysis — Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.32.0/plotly.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#10241E;
+    --ink-soft:#3C5049;
+    --bg:#F4F7F5;
+    --surface:#FFFFFF;
+    --border:#DFE7E3;
+    --primary:#0B6E4F;
+    --primary-soft:#E5F1EC;
+    --accent:#C9A227;
+    --accent-soft:#FBF3DC;
+    --danger:#B0413E;
+    --chart-1:#0B6E4F;
+    --chart-2:#3F9C7D;
+    --chart-3:#8BC5AA;
+    --chart-4:#1D4E89;
+    --chart-5:#5A87BE;
+    --chart-6:#C9A227;
+    --radius-card: 14px;
+    --radius-pill: 999px;
+    --shadow-card: 0 1px 2px rgba(16,36,30,0.06), 0 1px 12px rgba(16,36,30,0.04);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin:0; padding:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 40px 32px 80px; }
+
+  /* ---------- Header ---------- */
+  header.masthead {
+    display:flex; justify-content:space-between; align-items:flex-end;
+    gap: 24px; flex-wrap: wrap;
+    padding-bottom: 28px; margin-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+  .masthead-title h1 {
+    font-family:'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: clamp(28px, 3.4vw, 40px);
+    line-height: 1.08;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  .masthead-title p {
+    margin:0; color: var(--ink-soft); font-size: 15px; max-width: 640px; line-height: 1.5;
+  }
+  .masthead-meta {
+    text-align: right; font-size: 13px; color: var(--ink-soft);
+    display:flex; flex-direction:column; gap: 4px;
+  }
+  .masthead-meta strong { color: var(--ink); font-weight:600; }
+
+  /* ---------- Filter bar ---------- */
+  .filter-bar {
+    display:flex; align-items:center; gap: 14px; flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .filter-bar label {
+    font-size: 13px; color: var(--ink-soft); font-weight: 500;
+  }
+  .filter-bar select {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; font-weight: 500; color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    padding: 9px 16px;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%2310241E'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 34px;
+    transition: border-color .15s ease;
+  }
+  .filter-bar select:hover { border-color: var(--primary); }
+  .filter-pill {
+    font-size: 12.5px; color: var(--primary);
+    background: var(--primary-soft);
+    border-radius: var(--radius-pill);
+    padding: 6px 14px;
+    display: none;
+    align-items: center; gap: 6px;
+  }
+  .filter-pill.active { display:inline-flex; }
+  .filter-pill button {
+    border:none; background:none; color: var(--primary); font-size: 15px; line-height:1;
+    cursor:pointer; padding:0; font-weight: 700;
+  }
+
+  /* ---------- KPI cards ---------- */
+  .kpi-grid {
+    display:grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 18px 18px 16px;
+    box-shadow: var(--shadow-card);
+    display:flex; flex-direction:column; gap: 8px;
+  }
+  .kpi-label {
+    font-size: 12.5px; color: var(--ink-soft); font-weight: 500;
+  }
+  .kpi-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 26px; font-weight: 600; letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .kpi-sub { font-size: 12px; color: var(--ink-soft); }
+  .kpi-card.accent .kpi-value { color: var(--primary); }
+
+  /* ---------- Chart grid ---------- */
+  .section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px; font-weight: 600; margin: 40px 0 16px;
+    letter-spacing: -0.005em;
+  }
+  .chart-grid {
+    display:grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 16px;
+  }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: 18px 20px 8px;
+    display:flex; flex-direction:column;
+  }
+  .chart-card h3 {
+    font-family: 'Inter', sans-serif;
+    font-size: 14.5px; font-weight: 600; margin: 0 0 2px;
+    color: var(--ink);
+  }
+  .chart-card .chart-desc {
+    font-size: 12.5px; color: var(--ink-soft); margin: 0 0 6px;
+  }
+  .span-4 { grid-column: span 4; }
+  .span-5 { grid-column: span 5; }
+  .span-6 { grid-column: span 6; }
+  .span-7 { grid-column: span 7; }
+  .span-8 { grid-column: span 8; }
+  .span-12 { grid-column: span 12; }
+
+  footer {
+    margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border);
+    font-size: 12.5px; color: var(--ink-soft);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+
+  @media (max-width: 1100px) {
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .span-4, .span-5, .span-6, .span-7, .span-8 { grid-column: span 12; }
+  }
+  @media (max-width: 620px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .wrap { padding: 28px 16px 60px; }
+    header.masthead { flex-direction: column; align-items: flex-start; }
+    .masthead-meta { text-align:left; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="masthead-title">
+      <h1>Healthcare Data Analysis</h1>
+      <p>An interactive view of 54,860 hospital admission records — spanning patient demographics, medical conditions, billing, and outcomes across 2019–2024.</p>
+    </div>
+    <div class="masthead-meta">
+      <span>Source: <strong>healthcare_dataset.csv</strong></span>
+      <span>Cleaned records: <strong id="metaRecordCount">—</strong></span>
+      <span>Date range: <strong>May 2019 – May 2024</strong></span>
+    </div>
+  </header>
+
+  <div class="filter-bar">
+    <label for="conditionFilter">Filter by medical condition</label>
+    <select id="conditionFilter"></select>
+    <div class="filter-pill" id="filterPill">
+      <span id="filterPillText"></span>
+      <button id="filterPillClear" title="Clear filter">×</button>
+    </div>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <!-- OVERVIEW CHARTS -->
+  <div class="section-title">Patient Overview</div>
+  <div class="chart-grid">
+    <div class="chart-card span-4" id="card-gender"><h3>Gender Split</h3><p class="chart-desc">Share of patients by gender</p><div id="chart-gender" style="flex:1;min-height:260px;"></div></div>
+    <div class="chart-card span-4" id="card-agegroup"><h3>Age Group Distribution</h3><p class="chart-desc">Patient count per age band</p><div id="chart-agegroup" style="flex:1;min-height:260px;"></div></div>
+    <div class="chart-card span-4" id="card-testresults"><h3>Test Results</h3><p class="chart-desc">Outcome of diagnostic tests</p><div id="chart-testresults" style="flex:1;min-height:260px;"></div></div>
+  </div>
+
+  <!-- CONDITION & COST -->
+  <div class="section-title">Conditions &amp; Cost</div>
+  <div class="chart-grid">
+    <div class="chart-card span-6" id="card-condition"><h3>Patients by Medical Condition</h3><p class="chart-desc">Case volume per condition</p><div id="chart-condition" style="flex:1;min-height:300px;"></div></div>
+    <div class="chart-card span-6" id="card-billingcond"><h3>Average Billing by Condition</h3><p class="chart-desc">Mean charge per admission (USD)</p><div id="chart-billingcond" style="flex:1;min-height:300px;"></div></div>
+  </div>
+
+  <!-- ADMISSIONS & TRENDS -->
+  <div class="section-title">Admissions &amp; Trends</div>
+  <div class="chart-grid">
+    <div class="chart-card span-12" id="card-trend"><h3>Monthly Admissions Trend</h3><p class="chart-desc">Number of admissions per month, 2019–2024</p><div id="chart-trend" style="flex:1;min-height:280px;"></div></div>
+    <div class="chart-card span-6" id="card-admission"><h3>Admission Type</h3><p class="chart-desc">Elective vs. Urgent vs. Emergency</p><div id="chart-admission" style="flex:1;min-height:280px;"></div></div>
+    <div class="chart-card span-6" id="card-insurance"><h3>Patients by Insurance Provider</h3><p class="chart-desc">Coverage distribution across the patient base</p><div id="chart-insurance" style="flex:1;min-height:280px;"></div></div>
+  </div>
+
+  <!-- CLINICAL & OPERATIONS -->
+  <div class="section-title">Clinical &amp; Operational Detail</div>
+  <div class="chart-grid">
+    <div class="chart-card span-6" id="card-medication"><h3>Medication Usage</h3><p class="chart-desc">Prescriptions issued, by medication</p><div id="chart-medication" style="flex:1;min-height:280px;"></div></div>
+    <div class="chart-card span-6" id="card-hospitals"><h3>Top 10 Hospitals by Patient Volume</h3><p class="chart-desc">Facilities with the most recorded admissions</p><div id="chart-hospitals" style="flex:1;min-height:280px;"></div></div>
+    <div class="chart-card span-6" id="card-corr"><h3>Correlation Heatmap</h3><p class="chart-desc">Relationship between numeric fields</p><div id="chart-corr" style="flex:1;min-height:320px;"></div></div>
+    <div class="chart-card span-6" id="card-los"><h3>Avg. Length of Stay by Condition</h3><p class="chart-desc">Mean days admitted, per condition</p><div id="chart-los" style="flex:1;min-height:320px;"></div></div>
+  </div>
+
+  <footer>
+    <span>Healthcare Data Analysis — Portfolio Project</span>
+    <span>Built with Python (pandas, seaborn) · SQL · Plotly.js</span>
+  </footer>
+</div>
+
+<script>
+/* ============================================================
+   DATA (embedded — generated from cleaned_healthcare_data.csv)
+   ============================================================ */
+const GLOBAL = {
+  "total_patients": 54860,
+  "total_billing": 1404121601.3121338,
+  "avg_billing": 25594.633636750525,
+  "avg_age": 51.53384979948961,
+  "avg_los": 15.498815165876778,
+  "normal_rate": 33.361283266496535,
+  "gender": {
+    "Male": 27449,
+    "Female": 27411
+  },
+  "condition": {
+    "Arthritis": 9207,
+    "Diabetes": 9197,
+    "Hypertension": 9131,
+    "Obesity": 9127,
+    "Cancer": 9121,
+    "Asthma": 9077
+  },
+  "admission_type": {
+    "Elective": 18437,
+    "Urgent": 18353,
+    "Emergency": 18070
+  },
+  "test_results": {
+    "Abnormal": 18399,
+    "Normal": 18302,
+    "Inconclusive": 18159
+  },
+  "insurance": {
+    "Cigna": 11115,
+    "Medicare": 11018,
+    "UnitedHealthcare": 10995,
+    "Blue Cross": 10937,
+    "Aetna": 10795
+  },
+  "medication": {
+    "Lipitor": 11018,
+    "Ibuprofen": 11002,
+    "Aspirin": 10963,
+    "Paracetamol": 10945,
+    "Penicillin": 10932
+  },
+  "blood_type": {
+    "A-": 6882,
+    "A+": 6879,
+    "B+": 6876,
+    "AB+": 6872,
+    "B-": 6861,
+    "AB-": 6859,
+    "O+": 6843,
+    "O-": 6788
+  },
+  "avg_billing_by_condition": {
+    "Arthritis": 25542.9,
+    "Asthma": 25685.39,
+    "Cancer": 25205.92,
+    "Diabetes": 25714.33,
+    "Hypertension": 25559.84,
+    "Obesity": 25859.22
+  },
+  "avg_billing_by_admission": {
+    "Elective": 25663.34,
+    "Emergency": 25551.13,
+    "Urgent": 25568.44
+  },
+  "avg_los_by_condition": {
+    "Arthritis": 15.5,
+    "Asthma": 15.68,
+    "Cancer": 15.51,
+    "Diabetes": 15.43,
+    "Hypertension": 15.44,
+    "Obesity": 15.44
+  },
+  "monthly_trend": {
+    "2019-05": 672,
+    "2019-06": 897,
+    "2019-07": 950,
+    "2019-08": 982,
+    "2019-09": 924,
+    "2019-10": 990,
+    "2019-11": 947,
+    "2019-12": 918,
+    "2020-01": 939,
+    "2020-02": 868,
+    "2020-03": 922,
+    "2020-04": 907,
+    "2020-05": 968,
+    "2020-06": 923,
+    "2020-07": 1000,
+    "2020-08": 1002,
+    "2020-09": 898,
+    "2020-10": 948,
+    "2020-11": 899,
+    "2020-12": 883,
+    "2021-01": 921,
+    "2021-02": 825,
+    "2021-03": 949,
+    "2021-04": 859,
+    "2021-05": 893,
+    "2021-06": 914,
+    "2021-07": 965,
+    "2021-08": 886,
+    "2021-09": 858,
+    "2021-10": 884,
+    "2021-11": 899,
+    "2021-12": 942,
+    "2022-01": 959,
+    "2022-02": 770,
+    "2022-03": 929,
+    "2022-04": 869,
+    "2022-05": 884,
+    "2022-06": 956,
+    "2022-07": 934,
+    "2022-08": 946,
+    "2022-09": 910,
+    "2022-10": 900,
+    "2022-11": 884,
+    "2022-12": 950,
+    "2023-01": 924,
+    "2023-02": 871,
+    "2023-03": 910,
+    "2023-04": 892,
+    "2023-05": 918,
+    "2023-06": 950,
+    "2023-07": 913,
+    "2023-08": 961,
+    "2023-09": 913,
+    "2023-10": 883,
+    "2023-11": 872,
+    "2023-12": 911,
+    "2024-01": 903,
+    "2024-02": 865,
+    "2024-03": 900,
+    "2024-04": 939,
+    "2024-05": 212
+  },
+  "yearly_trend": {
+    "2019": 7280,
+    "2020": 11157,
+    "2021": 10795,
+    "2022": 10891,
+    "2023": 10918,
+    "2024": 3819
+  },
+  "age_group": {
+    "0-18": 885,
+    "19-30": 9504,
+    "31-45": 12088,
+    "46-60": 12248,
+    "61-75": 12079,
+    "76+": 8056
+  },
+  "top_hospitals": {
+    "LLC Smith": 44,
+    "Ltd Smith": 39,
+    "Johnson PLC": 37,
+    "Smith Ltd": 37,
+    "Smith PLC": 36,
+    "Smith Group": 34,
+    "Smith Inc": 33,
+    "Smith LLC": 32,
+    "Group Smith": 32,
+    "Johnson Inc": 32
+  },
+  "correlation": {
+    "Age": {
+      "Age": 1.0,
+      "Billing Amount": -0.003,
+      "Room Number": -0.0,
+      "Length of Stay": 0.008
+    },
+    "Billing Amount": {
+      "Age": -0.003,
+      "Billing Amount": 1.0,
+      "Room Number": -0.004,
+      "Length of Stay": -0.005
+    },
+    "Room Number": {
+      "Age": -0.0,
+      "Billing Amount": -0.004,
+      "Room Number": 1.0,
+      "Length of Stay": -0.005
+    },
+    "Length of Stay": {
+      "Age": 0.008,
+      "Billing Amount": -0.005,
+      "Room Number": -0.005,
+      "Length of Stay": 1.0
+    }
+  }
+};
+const BY_CONDITION = {"All": {"patient_count": 54860, "total_billing": 1404121601.3121338, "avg_billing": 25594.633636750525, "avg_age": 51.53384979948961, "avg_los": 15.498815165876778, "normal_rate": 33.361283266496535, "gender": {"Male": 27449, "Female": 27411}, "admission_type": {"Elective": 18437, "Urgent": 18353, "Emergency": 18070}, "test_results": {"Abnormal": 18399, "Normal": 18302, "Inconclusive": 18159}, "age_group": {"0-18": 885, "19-30": 9504, "31-45": 12088, "46-60": 12248, "61-75": 12079, "76+": 8056}, "insurance": {"Cigna": 11115, "Medicare": 11018, "UnitedHealthcare": 10995, "Blue Cross": 10937, "Aetna": 10795}, "medication": {"Lipitor": 11018, "Ibuprofen": 11002, "Aspirin": 10963, "Paracetamol": 10945, "Penicillin": 10932}}, "Arthritis": {"patient_count": 9207, "total_billing": 235173465.164881, "avg_billing": 25542.89835612914, "avg_age": 51.55066797002281, "avg_los": 15.50374714890844, "normal_rate": 32.50787444335831, "gender": {"Female": 4636, "Male": 4571}, "admission_type": {"Urgent": 3079, "Emergency": 3070, "Elective": 3058}, "test_results": {"Abnormal": 3153, "Inconclusive": 3061, "Normal": 2993}, "age_group": {"0-18": 148, "19-30": 1567, "31-45": 2067, "46-60": 2072, "61-75": 2001, "76+": 1352}, "insurance": {"Cigna": 1870, "UnitedHealthcare": 1856, "Medicare": 1835, "Blue Cross": 1834, "Aetna": 1812}, "medication": {"Aspirin": 1900, "Paracetamol": 1855, "Penicillin": 1840, "Lipitor": 1808, "Ibuprofen": 1804}}, "Asthma": {"patient_count": 9077, "total_billing": 233146239.82371685, "avg_billing": 25685.385019688976, "avg_age": 51.59325768425691, "avg_los": 15.676104439792883, "normal_rate": 34.29547207227057, "gender": {"Male": 4579, "Female": 4498}, "admission_type": {"Elective": 3064, "Urgent": 3040, "Emergency": 2973}, "test_results": {"Normal": 3113, "Inconclusive": 2992, "Abnormal": 2972}, "age_group": {"0-18": 150, "19-30": 1578, "31-45": 2001, "46-60": 1956, "61-75": 2020, "76+": 1372}, "insurance": {"Cigna": 1886, "UnitedHealthcare": 1851, "Blue Cross": 1814, "Medicare": 1805, "Aetna": 1721}, "medication": {"Paracetamol": 1868, "Penicillin": 1824, "Lipitor": 1809, "Ibuprofen": 1799, "Aspirin": 1777}}, "Cancer": {"patient_count": 9121, "total_billing": 229903234.6935116, "avg_billing": 25205.924207160577, "avg_age": 51.53820852976647, "avg_los": 15.510141431860541, "normal_rate": 33.01173116982787, "gender": {"Male": 4565, "Female": 4556}, "admission_type": {"Elective": 3108, "Urgent": 3030, "Emergency": 2983}, "test_results": {"Abnormal": 3081, "Inconclusive": 3029, "Normal": 3011}, "age_group": {"0-18": 146, "19-30": 1614, "31-45": 1978, "46-60": 2034, "61-75": 2005, "76+": 1344}, "insurance": {"UnitedHealthcare": 1849, "Cigna": 1844, "Medicare": 1843, "Aetna": 1802, "Blue Cross": 1783}, "medication": {"Lipitor": 1902, "Ibuprofen": 1853, "Paracetamol": 1827, "Penicillin": 1773, "Aspirin": 1766}}, "Diabetes": {"patient_count": 9197, "total_billing": 236494659.42989093, "avg_billing": 25714.326348797535, "avg_age": 51.579536805480046, "avg_los": 15.429487876481462, "normal_rate": 33.260845928020004, "gender": {"Female": 4599, "Male": 4598}, "admission_type": {"Urgent": 3188, "Elective": 3027, "Emergency": 2982}, "test_results": {"Abnormal": 3124, "Normal": 3059, "Inconclusive": 3014}, "age_group": {"0-18": 140, "19-30": 1565, "31-45": 2037, "46-60": 2070, "61-75": 2063, "76+": 1322}, "insurance": {"Medicare": 1881, "Cigna": 1870, "Blue Cross": 1843, "Aetna": 1828, "UnitedHealthcare": 1775}, "medication": {"Lipitor": 1871, "Penicillin": 1859, "Ibuprofen": 1844, "Aspirin": 1832, "Paracetamol": 1791}}, "Hypertension": {"patient_count": 9131, "total_billing": 233386943.49060482, "avg_billing": 25559.84486809822, "avg_age": 51.720512539699925, "avg_los": 15.435439710875041, "normal_rate": 33.96123097141606, "gender": {"Male": 4572, "Female": 4559}, "admission_type": {"Elective": 3171, "Urgent": 2990, "Emergency": 2970}, "test_results": {"Normal": 3101, "Inconclusive": 3060, "Abnormal": 2970}, "age_group": {"0-18": 143, "19-30": 1564, "31-45": 2023, "46-60": 2018, "61-75": 2011, "76+": 1372}, "insurance": {"UnitedHealthcare": 1861, "Aetna": 1855, "Medicare": 1820, "Cigna": 1800, "Blue Cross": 1795}, "medication": {"Ibuprofen": 1869, "Aspirin": 1840, "Paracetamol": 1837, "Lipitor": 1818, "Penicillin": 1767}}, "Obesity": {"patient_count": 9127, "total_billing": 236017058.70952848, "avg_billing": 25859.215373017254, "avg_age": 51.22066396406267, "avg_los": 15.439465322669005, "normal_rate": 33.14342062013805, "gender": {"Male": 4564, "Female": 4563}, "admission_type": {"Emergency": 3092, "Urgent": 3026, "Elective": 3009}, "test_results": {"Abnormal": 3099, "Normal": 3025, "Inconclusive": 3003}, "age_group": {"0-18": 158, "19-30": 1616, "31-45": 1982, "46-60": 2098, "61-75": 1979, "76+": 1294}, "insurance": {"Blue Cross": 1868, "Cigna": 1845, "Medicare": 1834, "UnitedHealthcare": 1803, "Aetna": 1777}, "medication": {"Penicillin": 1869, "Aspirin": 1848, "Ibuprofen": 1833, "Lipitor": 1810, "Paracetamol": 1767}}};
+
+/* ============================================================
+   THEME
+   ============================================================ */
+const COLORS = ['#0B6E4F', '#3F9C7D', '#8BC5AA', '#1D4E89', '#5A87BE', '#C9A227', '#B0413E'];
+const FONT = { family: "Inter, sans-serif", color: "#10241E", size: 12.5 };
+const BASE_LAYOUT = {
+  font: FONT,
+  margin: { l: 56, r: 20, t: 10, b: 46 },
+  paper_bgcolor: 'rgba(0,0,0,0)',
+  plot_bgcolor: 'rgba(0,0,0,0)',
+  hoverlabel: { bgcolor: '#10241E', font: { color: '#FFFFFF', size: 12 }, bordercolor: '#10241E' },
+  showlegend: false,
+};
+const CONFIG = { displayModeBar: false, responsive: true };
+
+function fmtMoney(n) {
+  if (n >= 1e9) return '$' + (n / 1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K';
+  return '$' + n.toFixed(0);
+}
+function fmtNum(n) { return n.toLocaleString('en-US'); }
+
+/* ============================================================
+   FILTER STATE
+   ============================================================ */
+let currentCondition = 'All';
+
+function dataFor(cond) { return BY_CONDITION[cond] || BY_CONDITION['All']; }
+
+/* ============================================================
+   KPI CARDS
+   ============================================================ */
+function renderKPIs() {
+  const d = dataFor(currentCondition);
+  const kpis = [
+    { label: 'Total Patients', value: fmtNum(d.patient_count), sub: currentCondition === 'All' ? 'All conditions' : currentCondition },
+    { label: 'Total Billing', value: fmtMoney(d.total_billing), sub: 'Sum of all charges' },
+    { label: 'Avg. Billing / Patient', value: fmtMoney(d.avg_billing), sub: 'Per admission' },
+    { label: 'Average Age', value: d.avg_age.toFixed(1) + ' yrs', sub: 'Across selected patients' },
+    { label: 'Avg. Length of Stay', value: d.avg_los.toFixed(1) + ' days', sub: 'Admission to discharge' },
+    { label: 'Normal Test Result Rate', value: d.normal_rate.toFixed(1) + '%', sub: 'Share of "Normal" results' },
+  ];
+  const grid = document.getElementById('kpiGrid');
+  grid.innerHTML = kpis.map((k, i) => `
+    <div class="kpi-card ${i === 1 ? 'accent' : ''}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>
+  `).join('');
+  document.getElementById('metaRecordCount').textContent = fmtNum(GLOBAL.total_patients);
+}
+
+/* ============================================================
+   CHART RENDERERS
+   ============================================================ */
+function renderGender() {
+  const d = dataFor(currentCondition).gender;
+  const labels = Object.keys(d), values = Object.values(d);
+  Plotly.react('chart-gender', [{
+    type: 'pie', labels, values, hole: 0.55,
+    marker: { colors: COLORS, line: { color: '#fff', width: 2 } },
+    textinfo: 'percent', textfont: { size: 12, color: '#fff' },
+    hovertemplate: '%{label}: %{value:,} patients<extra></extra>',
+  }], { ...BASE_LAYOUT, margin: { l: 10, r: 10, t: 10, b: 10 }, legend: { orientation: 'h', y: -0.1 }, showlegend: true }, CONFIG);
+}
+
+function renderAgeGroup() {
+  const d = dataFor(currentCondition).age_group;
+  const order = ['0-18', '19-30', '31-45', '46-60', '61-75', '76+'];
+  const labels = order.filter(k => k in d);
+  const values = labels.map(k => d[k]);
+  Plotly.react('chart-agegroup', [{
+    type: 'bar', x: labels, y: values,
+    marker: { color: COLORS[0] },
+    hovertemplate: '%{x} yrs: %{y:,} patients<extra></extra>',
+  }], { ...BASE_LAYOUT, xaxis: { title: '' }, yaxis: { title: 'Patients', gridcolor: '#EAEFEC' } }, CONFIG);
+}
+
+function renderTestResults() {
+  const d = dataFor(currentCondition).test_results;
+  const order = ['Normal', 'Inconclusive', 'Abnormal'];
+  const labels = order.filter(k => k in d);
+  const values = labels.map(k => d[k]);
+  Plotly.react('chart-testresults', [{
+    type: 'pie', labels, values, hole: 0.55,
+    marker: { colors: [COLORS[1], COLORS[5], COLORS[6]], line: { color: '#fff', width: 2 } },
+    textinfo: 'percent', textfont: { size: 12, color: '#fff' },
+    hovertemplate: '%{label}: %{value:,} records<extra></extra>',
+  }], { ...BASE_LAYOUT, margin: { l: 10, r: 10, t: 10, b: 10 }, legend: { orientation: 'h', y: -0.1 }, showlegend: true }, CONFIG);
+}
+
+function renderConditionBar() {
+  // Always show full breakdown by condition (global); highlight selection
+  const entries = Object.entries(GLOBAL.condition).sort((a, b) => b[1] - a[1]);
+  const labels = entries.map(e => e[0]);
+  const values = entries.map(e => e[1]);
+  const colors = labels.map(l => (currentCondition === 'All' || currentCondition === l) ? COLORS[0] : '#C9D6D0');
+  Plotly.react('chart-condition', [{
+    type: 'bar', x: values, y: labels, orientation: 'h',
+    marker: { color: colors },
+    hovertemplate: '%{y}: %{x:,} patients<extra></extra>',
+  }], { ...BASE_LAYOUT, xaxis: { title: 'Patients', gridcolor: '#EAEFEC' }, yaxis: { autorange: 'reversed' }, margin: { l: 100, r: 20, t: 10, b: 40 } }, CONFIG);
+}
+
+function renderBillingByCondition() {
+  const entries = Object.entries(GLOBAL.avg_billing_by_condition).sort((a, b) => b[1] - a[1]);
+  const labels = entries.map(e => e[0]);
+  const values = entries.map(e => e[1]);
+  const colors = labels.map(l => (currentCondition === 'All' || currentCondition === l) ? COLORS[3] : '#C9D6D0');
+  Plotly.react('chart-billingcond', [{
+    type: 'bar', x: values, y: labels, orientation: 'h',
+    marker: { color: colors },
+    hovertemplate: '%{y}: $%{x:,.0f} avg<extra></extra>',
+  }], { ...BASE_LAYOUT, xaxis: { title: 'Avg. Billing (USD)', gridcolor: '#EAEFEC' }, yaxis: { autorange: 'reversed' }, margin: { l: 100, r: 20, t: 10, b: 40 } }, CONFIG);
+}
+
+function renderTrend() {
+  const labels = Object.keys(GLOBAL.monthly_trend);
+  const values = Object.values(GLOBAL.monthly_trend);
+  Plotly.react('chart-trend', [{
+    type: 'scatter', mode: 'lines', x: labels, y: values,
+    line: { color: COLORS[0], width: 2.5, shape: 'spline' },
+    fill: 'tozeroy', fillcolor: 'rgba(11,110,79,0.08)',
+    hovertemplate: '%{x}: %{y:,} admissions<extra></extra>',
+  }], { ...BASE_LAYOUT, xaxis: { title: '', tickangle: -45, nticks: 18 }, yaxis: { title: 'Admissions', gridcolor: '#EAEFEC' } }, CONFIG);
+}
+
+function renderAdmission() {
+  const d = dataFor(currentCondition).admission_type;
+  const labels = Object.keys(d), values = Object.values(d);
+  Plotly.react('chart-admission', [{
+    type: 'bar', x: labels, y: values,
+    marker: { color: [COLORS[0], COLORS[3], COLORS[5]] },
+    hovertemplate: '%{x}: %{y:,} patients<extra></extra>',
+  }], { ...BASE_LAYOUT, yaxis: { title: 'Patients', gridcolor: '#EAEFEC' } }, CONFIG);
+}
+
+function renderInsurance() {
+  const d = dataFor(currentCondition).insurance;
+  const entries = Object.entries(d).sort((a, b) => b[1] - a[1]);
+  const labels = entries.map(e => e[0]), values = entries.map(e => e[1]);
+  Plotly.react('chart-insurance', [{
+    type: 'bar', x: values, y: labels, orientation: 'h',
+    marker: { color: COLORS[4] },
+    hovertemplate: '%{y}: %{x:,} patients<extra></extra>',
+  }], { ...BASE_LAYOUT, xaxis: { title: 'Patients', gridcolor: '#EAEFEC' }, yaxis: { autorange: 'reversed' }, margin: { l: 130, r: 20, t: 10, b: 40 } }, CONFIG);
+}
+
+function renderMedication() {
+  const d = dataFor(currentCondition).medication;
+  const entries = Object.entries(d).sort((a, b) => b[1] - a[1]);
+  const labels = entries.map(e => e[0]), values = entries.map(e => e[1]);
+  Plotly.react('chart-medication', [{
+    type: 'bar', x: values, y: labels, orientation: 'h',
+    marker: { color: COLORS[1] },
+    hovertemplate: '%{y}: %{x:,} prescriptions<extra></extra>',
+  }], { ...BASE_LAYOUT, xaxis: { title: 'Prescriptions', gridcolor: '#EAEFEC' }, yaxis: { autorange: 'reversed' }, margin: { l: 100, r: 20, t: 10, b: 40 } }, CONFIG);
+}
+
+function renderHospitals() {
+  const entries = Object.entries(GLOBAL.top_hospitals).sort((a, b) => b[1] - a[1]);
+  const labels = entries.map(e => e[0]), values = entries.map(e => e[1]);
+  Plotly.react('chart-hospitals', [{
+    type: 'bar', x: values, y: labels, orientation: 'h',
+    marker: { color: COLORS[6] },
+    hovertemplate: '%{y}: %{x:,} patients<extra></extra>',
+  }], { ...BASE_LAYOUT, xaxis: { title: 'Patients', gridcolor: '#EAEFEC' }, yaxis: { autorange: 'reversed' }, margin: { l: 100, r: 20, t: 10, b: 40 } }, CONFIG);
+}
+
+function renderCorrelation() {
+  const fields = ['Age', 'Billing Amount', 'Room Number', 'Length of Stay'];
+  const z = fields.map(r => fields.map(c => GLOBAL.correlation[r][c]));
+  Plotly.react('chart-corr', [{
+    type: 'heatmap', x: fields, y: fields, z,
+    colorscale: [[0, '#B0413E'], [0.5, '#F4F7F5'], [1, '#0B6E4F']],
+    zmin: -1, zmax: 1,
+    text: z.map(row => row.map(v => v.toFixed(3))),
+    texttemplate: '%{text}',
+    hovertemplate: '%{y} vs %{x}: %{z:.3f}<extra></extra>',
+    colorbar: { thickness: 12, len: 0.8 },
+  }], { ...BASE_LAYOUT, margin: { l: 110, r: 20, t: 10, b: 90 } }, CONFIG);
+}
+
+function renderLOS() {
+  const entries = Object.entries(GLOBAL.avg_los_by_condition).sort((a, b) => b[1] - a[1]);
+  const labels = entries.map(e => e[0]), values = entries.map(e => e[1]);
+  const colors = labels.map(l => (currentCondition === 'All' || currentCondition === l) ? COLORS[3] : '#C9D6D0');
+  Plotly.react('chart-los', [{
+    type: 'bar', x: labels, y: values,
+    marker: { color: colors },
+    hovertemplate: '%{x}: %{y:.1f} days avg<extra></extra>',
+  }], { ...BASE_LAYOUT, yaxis: { title: 'Days', gridcolor: '#EAEFEC' } }, CONFIG);
+}
+
+function renderAll() {
+  renderKPIs();
+  renderGender();
+  renderAgeGroup();
+  renderTestResults();
+  renderConditionBar();
+  renderBillingByCondition();
+  renderTrend();
+  renderAdmission();
+  renderInsurance();
+  renderMedication();
+  renderHospitals();
+  renderCorrelation();
+  renderLOS();
+}
+
+/* ============================================================
+   FILTER CONTROL
+   ============================================================ */
+function initFilter() {
+  const select = document.getElementById('conditionFilter');
+  const conditions = ['All', ...Object.keys(GLOBAL.condition).sort()];
+  select.innerHTML = conditions.map(c => `<option value="${c}">${c === 'All' ? 'All conditions' : c}</option>`).join('');
+  select.addEventListener('change', () => {
+    currentCondition = select.value;
+    updateFilterPill();
+    renderAll();
+  });
+
+  document.getElementById('filterPillClear').addEventListener('click', () => {
+    currentCondition = 'All';
+    select.value = 'All';
+    updateFilterPill();
+    renderAll();
+  });
+}
+
+function updateFilterPill() {
+  const pill = document.getElementById('filterPill');
+  const text = document.getElementById('filterPillText');
+  if (currentCondition === 'All') {
+    pill.classList.remove('active');
+  } else {
+    pill.classList.add('active');
+    text.textContent = 'Filtered: ' + currentCondition;
+  }
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+initFilter();
+renderAll();
+
+window.addEventListener('resize', () => {
+  document.querySelectorAll('.chart-card > div[id^="chart-"]').forEach(el => Plotly.Plots.resize(el));
+});
+</script>
+</body>
+</html>

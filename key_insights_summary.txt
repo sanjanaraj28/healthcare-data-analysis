@@ -1,0 +1,12 @@
+HEALTHCARE DATA ANALYSIS - KEY INSIGHTS SUMMARY
+============================================================
+
+  Total patient records analyzed : 54,860
+  Average patient age            : 51.5 years
+  Average billing amount         : $25,594.63
+  Total billing (sum)            : $1,404,121,601.31
+  Average length of stay         : 15.5 days
+  Most common medical condition  : Arthritis
+  Most common admission type     : Elective
+  Most costly condition (avg $)  : Obesity ($25,859.22)
+  Share of 'Normal' test results : 33.4%
